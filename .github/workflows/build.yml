@@ -1,0 +1,25 @@
+name: Build Fabric Mod
+
+on:
+  push:
+    tags:
+      - 'v*' # 當你推送標籤如 v1.0.0 時觸發
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - name: Build with Gradle
+        run: ./gradlew build
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/[YOUR_MOD_NAME]-*.jar # 替換成你實際產出的檔名
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
