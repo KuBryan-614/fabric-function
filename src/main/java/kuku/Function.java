@@ -30,7 +30,6 @@ import java.util.UUID;
 public class Function implements ModInitializer {
 	public static final String MOD_ID = "function";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-
 	@Override
 	public void onInitialize() {
 		LOGGER.info("Function Mod initializing...");
