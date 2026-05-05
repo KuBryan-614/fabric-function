@@ -5,61 +5,75 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import kuku.config.BackConfig;
 import kuku.back.BackManager;
+import kuku.lang.LanguageManager;
+import kuku.util.MessageDisplayManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
-public class BackCommand {
+import java.util.UUID;
 
-    private static MutableComponent prefix() {
-        return Component.literal("[Function Back] ").withStyle(ChatFormatting.GOLD);
-    }
+public class BackCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("back")
                 .executes(BackCommand::teleportBack));
     }
 
-    private static boolean checkEnabled(CommandSourceStack source) {
+    private static boolean checkEnabled(CommandSourceStack source, ServerPlayer player) {
         if (!BackConfig.getInstance().isEnabled()) {
-            source.sendFailure(prefix().append(
-                    Component.literal("Back 模块已被禁用。").withStyle(ChatFormatting.RED)));
+            MessageDisplayManager.sendSystemMessage(player,
+                    LanguageManager.prefixed("Back", "back.error.disabled", player)
+                            .withStyle(ChatFormatting.RED));
             return false;
         }
         return true;
     }
 
     private static int teleportBack(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        if (!checkEnabled(ctx.getSource())) return 0;
-
         ServerPlayer player = ctx.getSource().getPlayerOrException();
-        BackManager.LastLocation loc = BackManager.consume(player.getUUID());
+        if (!checkEnabled(ctx.getSource(), player)) return 0;
 
-        if (loc == null) {
-            ctx.getSource().sendFailure(prefix().append(
-                    Component.literal("没有可返回的上一个位置。").withStyle(ChatFormatting.RED)));
-            return 0;
+        UUID playerId = player.getUUID();
+
+        if (BackManager.hasDeath(playerId)) {
+            BackManager.LastLocation loc = BackManager.consumeDeath(playerId);
+            return performBack(ctx, player, loc, "back.success.death");
         }
 
-        // 获取目标世界
+        if (BackManager.hasTeleport(playerId)) {
+            BackManager.LastLocation loc = BackManager.consumeTeleport(playerId);
+            return performBack(ctx, player, loc, "back.success.teleport");
+        }
+
+        MessageDisplayManager.sendSystemMessage(player,
+                LanguageManager.prefixed("Back", "back.error.no_location", player)
+                        .withStyle(ChatFormatting.RED));
+        return 0;
+    }
+
+    private static int performBack(CommandContext<CommandSourceStack> ctx, ServerPlayer player,
+                                   BackManager.LastLocation loc, String successKey) throws CommandSyntaxException {
         ServerLevel targetWorld = player.level().getServer().getLevel(
                 ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, loc.dimensionId()));
         if (targetWorld == null) {
-            ctx.getSource().sendFailure(prefix().append(
-                    Component.literal("目标世界不存在：" + loc.dimensionId()).withStyle(ChatFormatting.RED)));
+            MessageDisplayManager.sendSystemMessage(player,
+                    LanguageManager.prefixed("Back", "back.error.world_not_found", player, loc.dimensionId().toString())
+                            .withStyle(ChatFormatting.RED));
             return 0;
         }
 
+        // 傳送前記住當前位置，實現 A↔B 無限切換
+        BackManager.recordTeleport(player);
         player.teleportTo(targetWorld, loc.x(), loc.y(), loc.z(),
                 java.util.Set.of(), loc.yaw(), loc.pitch(), true);
 
-        ctx.getSource().sendSuccess(() -> prefix().append(
-                Component.literal("已返回上一个位置。").withStyle(ChatFormatting.GREEN)), false);
+        MessageDisplayManager.sendSystemMessage(player,
+                LanguageManager.prefixed("Back", successKey, player)
+                        .withStyle(ChatFormatting.GREEN));
         return 1;
     }
 }

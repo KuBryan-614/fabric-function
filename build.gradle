@@ -39,11 +39,14 @@ dependencies {
 
 processResources {
 	inputs.property "version", project.version
-	filteringCharset "UTF-8"
 
+	// 僅針對 fabric.mod.json 進行變數替換
 	filesMatching("fabric.mod.json") {
 		expand "version": project.version
 	}
+
+	// 確保所有資源處理都強制使用 UTF-8
+	filteringCharset "UTF-8"
 }
 
 tasks.withType(JavaCompile).configureEach {

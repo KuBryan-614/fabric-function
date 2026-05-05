@@ -1,40 +1,21 @@
-# gradle
-
+# Gradle
 .gradle/
 build/
-out/
-classes/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 
-# eclipse
-
-*.launch
-
-# idea
-
+# IDE
 .idea/
 *.iml
-*.ipr
 *.iws
+*.ipr
+out/
 
-# vscode
-
-.settings/
-.vscode/
-bin/
-.classpath
-.project
-
-# macos
-
-*.DS_Store
-
-# fabric
-
+# Minecraft running
 run/
+logs/
+*.log
 
-# java
-
-hs_err_*.log
-replay_*.log
-*.hprof
-*.jfr
+# OS
+.DS_Store
+Thumbs.db

@@ -66,7 +66,7 @@ public class HomeManager {
                 File backup = new File(file.getPath() + ".bak");
                 java.nio.file.Files.copy(file.toPath(), backup.toPath(),
                         java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                System.err.println("[HomeManager] 数据文件损坏，已备份为 " + backup.getName());
+                System.err.println("[Home] 資料檔損壞，已備份為 " + backup.getName());
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }

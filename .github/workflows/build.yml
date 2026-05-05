@@ -20,6 +20,6 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/libs/[YOUR_MOD_NAME]-*.jar # 替換成你實際產出的檔名
+          files: build/libs/function-1.0.0.jar # 替換成你實際產出的檔名
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
