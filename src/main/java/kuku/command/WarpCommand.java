@@ -12,15 +12,21 @@ import kuku.config.WarpConfig;
 import kuku.data.WarpData;
 import kuku.warp.WarpManager;
 import kuku.util.MessageDisplayManager;
+import kuku.warp.gui.WarpGuiHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.state.BlockState;
+
+import java.util.Collection;
 
 public class WarpCommand {
 
@@ -58,6 +64,35 @@ public class WarpCommand {
 
         dispatcher.register(Commands.literal("warps")
                 .executes(WarpCommand::listWarps));
+
+        dispatcher.register(Commands.literal("renamewarp")
+                .then(Commands.argument("old", StringArgumentType.string())       // 只取一个单词
+                        .then(Commands.argument("new", StringArgumentType.greedyString()) // 剩余全部
+                                .executes(ctx -> {
+                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                    if (!checkEnabled(ctx.getSource(), player)) return 0;
+                                    String old = StringArgumentType.getString(ctx, "old");
+                                    String newName = StringArgumentType.getString(ctx, "new");
+                                    WarpData warp = WarpManager.getWarp(old);
+                                    if (warp == null) {
+                                        player.sendSystemMessage(Component.literal("§c传送点不存在"));
+                                        return 0;
+                                    }
+                                    if (!warp.getOwnerUUID().equals(player.getUUID())) {
+                                        player.sendSystemMessage(Component.literal("§c你不是该传送点的所有者"));
+                                        return 0;
+                                    }
+                                    if (WarpManager.getWarp(newName) != null) {
+                                        player.sendSystemMessage(Component.literal("§c该名称已被占用"));
+                                        return 0;
+                                    }
+                                    WarpManager.renameWarp(old, newName);
+                                    player.sendSystemMessage(Component.literal("§a重命名成功：§e" + newName));
+                                    return 1;
+                                })
+                        )
+                )
+        );
     }
 
     private static boolean checkEnabled(CommandSourceStack source, ServerPlayer player) {
@@ -84,7 +119,16 @@ public class WarpCommand {
             return 0;
         }
 
-        WarpData warp = new WarpData(name, player.getUUID(), dimension, player.blockPosition());
+        WarpData warp = new WarpData(name, player.getUUID(), player.getName().getString(), dimension, player.blockPosition());
+
+        // 自动将脚下非空气方块设为图标
+        BlockPos below = player.blockPosition().below();
+        BlockState state = player.level().getBlockState(below);
+        if (!state.isAir()) {
+            Identifier blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+            warp.setIconItemId(blockId.toString());
+        }
+
         if (WarpManager.addWarp(warp)) {
             MessageDisplayManager.sendSystemMessage(player,
                     LanguageManager.prefixed("Warp", "warp.success.set", player, name)
@@ -179,40 +223,26 @@ public class WarpCommand {
     }
 
     private static int listWarps(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
-        ServerPlayer tempPlayer = null;
+        ServerPlayer player = null;
         try {
-            tempPlayer = ctx.getSource().getPlayerOrException();
+            player = ctx.getSource().getPlayerOrException();
         } catch (CommandSyntaxException ignored) {}
-        final ServerPlayer player = tempPlayer;
 
-        if (player != null && !checkEnabled(ctx.getSource(), player)) return 0;
-
-        var all = WarpManager.getAllWarps();
-        if (all.isEmpty()) {
-            MutableComponent msg = LanguageManager.prefixed("Warp", "warp.list.empty", player)
-                    .withStyle(ChatFormatting.YELLOW);
-            if (player != null) {
-                player.sendSystemMessage(msg);               // ✅ 强制聊天栏
-            } else {
-                System.out.println(msg.getString());
-            }
-            return 0;
-        }
-
-        MutableComponent msg = LanguageManager.prefixed("Warp", "warp.list.header", player)
-                .withStyle(ChatFormatting.GOLD);
-        for (WarpData w : all) {
-            String entry = LanguageManager.format(
-                    LanguageManager.translate("warp.list.entry", player),
-                    w.getName(), w.getDimensionId().toString(), w.getPos().toShortString()
-            );
-            msg.append("\n").append(Component.literal(entry).withStyle(ChatFormatting.WHITE));
-        }
         if (player != null) {
-            player.sendSystemMessage(msg);                   // ✅ 强制聊天栏
+            if (!checkEnabled(ctx.getSource(), player)) return 0;
+            WarpGuiHelper.openMainMenu(player);
+            return 1;
         } else {
-            System.out.println(msg.getString());
+            var all = WarpManager.getAllWarps();
+            if (all.isEmpty()) {
+                System.out.println("[Function Warp] 暂无传送点");
+                return 0;
+            }
+            System.out.println("--- 传送点列表 ---");
+            for (WarpData w : all) {
+                System.out.println(w.getName() + " | 主人: " + w.getOwnerName() + " | " + w.getDimensionId() + " " + w.getPos().toShortString());
+            }
+            return 1;
         }
-        return 1;
     }
 }

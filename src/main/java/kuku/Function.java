@@ -11,6 +11,7 @@ import kuku.tree.TreeAuto;
 import kuku.util.MessageDisplayManager;
 import kuku.warp.WarpManager;
 import kuku.back.BackManager;
+import kuku.warp.gui.RenameSessionManager;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -21,7 +22,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Inventory;
+import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,6 +131,16 @@ public class Function implements ModInitializer {
 			}
 		});
 
+		ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, params) -> {
+			if (sender instanceof ServerPlayer player) {
+				String content = message.signedContent();
+				if (content != null && RenameSessionManager.handleChat(player, content)) {
+					return false; // 消耗消息，不广播
+				}
+			}
+			return true;
+		});
+
 		// 伺服器啟動完成後載入數據
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			var configDir = FabricLoader.getInstance().getConfigDir().resolve(MOD_ID);
@@ -147,6 +158,7 @@ public class Function implements ModInitializer {
 			WarpManager.save(configDir);
 			PlayerLanguageManager.save(configDir);
 			MessageDisplayManager.save();
+			RenameSessionManager.shutdown(); // 关闭调度线程
 			LOGGER.info("Saved home & warp data.");
 		});
 

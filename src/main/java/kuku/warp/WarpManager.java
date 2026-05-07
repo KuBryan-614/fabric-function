@@ -10,42 +10,56 @@ import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WarpManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    // 以名称为键，校验全局唯一
     private static final Map<String, WarpData> warps = new ConcurrentHashMap<>();
     private static final Type TYPE = new TypeToken<Map<String, WarpData>>() {}.getType();
+    private static Path configDir;   // 保存路径，加載時設定
 
-    public static boolean addWarp(WarpData warp) {
-        // 名称已存在则失败
+    public static synchronized boolean addWarp(WarpData warp) {
         if (warps.containsKey(warp.getName())) return false;
-        // 检查所有者 warp 数量
         long count = warps.values().stream()
                 .filter(w -> w.getOwnerUUID().equals(warp.getOwnerUUID()))
                 .count();
         if (count >= WarpConfig.getInstance().getMaxWarps()) {
-            return false;   // 超过上限
+            return false;
         }
         warps.put(warp.getName(), warp);
+        scheduleSave();
         return true;
     }
 
-    public static boolean deleteWarp(String name, UUID requesterUUID) {
+    public static synchronized boolean deleteWarp(String name, UUID requesterUUID) {
         WarpData warp = warps.get(name);
         if (warp == null) return false;
-        // 只能由所有者删除（控制台可绕过，但命令中额外处理）
         if (!warp.getOwnerUUID().equals(requesterUUID)) {
             return false;
         }
         warps.remove(name);
+        scheduleSave();
         return true;
     }
 
-    // 供控制台强制删除
-    public static boolean forceDelete(String name) {
-        return warps.remove(name) != null;
+    public static synchronized boolean renameWarp(String oldName, String newName) {
+        // 此方法已有 synchronized，无需更改，这里仅展示保持一致
+        if (warps.containsKey(newName)) return false;
+        WarpData warp = warps.remove(oldName);
+        if (warp != null) {
+            warp.setName(newName);
+            warps.put(newName, warp);
+            scheduleSave();
+            return true;
+        }
+        return false;
+    }
+
+    public static synchronized boolean forceDelete(String name) {
+        boolean removed = warps.remove(name) != null;
+        if (removed) scheduleSave();
+        return removed;
     }
 
     public static WarpData getWarp(String name) {
@@ -56,12 +70,12 @@ public class WarpManager {
         return List.copyOf(warps.values());
     }
 
-    // 获取某玩家拥有的 warp 列表
     public static List<WarpData> getWarpsByOwner(UUID owner) {
         return warps.values().stream().filter(w -> w.getOwnerUUID().equals(owner)).toList();
     }
 
     public static void load(Path configDir) {
+        WarpManager.configDir = configDir;   // 記住路徑
         File file = configDir.resolve("warps.json").toFile();
         if (!file.exists()) return;
 
@@ -95,5 +109,12 @@ public class WarpManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    // 異步保存，避免阻塞主執行緒
+    private static void scheduleSave() {
+        if (configDir == null) return;   // 尚未初始化
+        final Path path = configDir;
+        CompletableFuture.runAsync(() -> save(path));
     }
 }
