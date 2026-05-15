@@ -25,6 +25,9 @@ jobs:
       - name: Grant Execute Permission
         run: chmod +x gradlew
 
+      - name: Verify Java Version
+        run: java -version
+
       - name: Build with Gradle
         run: ./gradlew build
 
