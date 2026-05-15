@@ -1,8 +1,18 @@
 {
 	"required": true,
-	"package": "",
+	"package": "kuku.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
+		"chest.ChestBlockMixin",
+		"chest.ShulkerBoxBlockMixin",
+		"name.chestname.BaseContainerBlockEntityAccessor",
+		"name.WitherBossAccessor",
+		"name.LivingEntityMixin",
+		"name.EntityTagsAccessor",
+		"debug.ServerPlayerGameModeMixin",
+		"debug.IngredientMixin",
+		"modslash.ServerCommonPacketListenerImplAccessor",
+		"dli.ServerPlayerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

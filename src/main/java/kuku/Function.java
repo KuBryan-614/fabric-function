@@ -1,12 +1,31 @@
 package kuku;
 
+import kuku.blp.BLPCommand;
+import kuku.blp.BLPHandler;
+import kuku.blp.BLPSettings;
+import kuku.debug.DebugStickActions;
+import kuku.debug.DebugStickCommand;
+import kuku.dli.DliCommand;
+import kuku.dli.DliSettings;
+import kuku.dli.DliSetup;
+import kuku.error.RecipeChecker;
+import kuku.modslash.ModslashCommands;
+import kuku.modslash.TickTracker;
+import kuku.name.NameFeature;
+import kuku.name.chestname.ChestNamingSetup;
 import kuku.command.*;
 import kuku.command.TreeAutoCommand;
 import kuku.config.*;
+import kuku.demagic.DemagicCommand;
 import kuku.home.HomeManager;
 import kuku.lang.LanguageManager;
 import kuku.lang.PlayerLanguageManager;
+import kuku.ptv.PTVCommand;
+import kuku.ptv.PTVHandler;
+import kuku.ptv.PTVSettings;
 import kuku.rightclick.RightClickHarvest;
+import kuku.slab.SlabMiningHandler;
+import kuku.takeoffbindings.RemoveBindingCommand;
 import kuku.tree.TreeAuto;
 import kuku.util.MessageDisplayManager;
 import kuku.warp.WarpManager;
@@ -37,6 +56,15 @@ public class Function implements ModInitializer {
 		MessageDisplayManager.initStorage();
 		TreeAuto.register();
 		RightClickHarvest.register();
+		ChestNamingSetup.init();
+		NameFeature.init();
+		DebugStickActions.init();
+		TickTracker.register();
+		SlabMiningHandler.register();
+		RecipeChecker.init();
+		DliSetup.init();
+		PTVHandler.init();
+		BLPHandler.init();
 
 		// 註冊命令（Home, TPA, Warp, Back）與控制台重載
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
@@ -47,6 +75,13 @@ public class Function implements ModInitializer {
 			BackCommand.register(dispatcher);
 			LangCommand.register(dispatcher);
 			TreeAutoCommand.register(dispatcher);
+			RemoveBindingCommand.register(dispatcher);
+			NameFeature.registerCommand(dispatcher);
+			ModslashCommands.register(dispatcher);
+			DebugStickCommand.register(dispatcher);
+			DliCommand.register(dispatcher);
+			PTVCommand.register(dispatcher);
+			BLPCommand.register(dispatcher);
 
 			dispatcher.register(Commands.literal("function")
 					.then(Commands.literal("reload")
@@ -116,6 +151,10 @@ public class Function implements ModInitializer {
 							})
 					)
 			);
+
+			dispatcher.register(Commands.literal("demagic")
+					.executes(DemagicCommand::execute)
+			);
 		});
 
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
@@ -162,5 +201,11 @@ public class Function implements ModInitializer {
 			LOGGER.info("Saved home & warp data.");
 		});
 
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+			UUID id = handler.getPlayer().getUUID();
+			PTVSettings.remove(id);
+			DliSettings.remove(id);
+			BLPSettings.remove(id);
+		});
 	}
 }

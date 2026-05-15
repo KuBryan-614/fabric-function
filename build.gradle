@@ -16,6 +16,7 @@ repositories {
 
 loom {
 	splitEnvironmentSourceSets()
+	accessWidenerPath = file("src/main/resources/function.accesswidener")
 
 	mods {
 		"function" {
