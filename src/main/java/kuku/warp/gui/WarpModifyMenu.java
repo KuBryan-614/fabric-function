@@ -2,6 +2,7 @@ package kuku.warp.gui;
 
 import kuku.data.WarpData;
 import kuku.lang.LanguageManager;
+import kuku.warp.WarpManager;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -68,7 +69,6 @@ public class WarpModifyMenu extends ChestMenu {
             sp.closeContainer();
             RenameSessionManager.startRename(sp, warp);   // 方法名与你的 RenameSessionManager 保持一致
         } else if (slot == 1) {
-            // 更改图标：使用手持物品（不消耗）
             ItemStack handItem = sp.getMainHandItem();
             if (handItem.isEmpty()) {
                 sp.sendSystemMessage(Component.literal(
@@ -77,13 +77,13 @@ public class WarpModifyMenu extends ChestMenu {
             }
             Identifier itemId = BuiltInRegistries.ITEM.getKey(handItem.getItem());
             warp.setIconItemId(itemId.toString());
+            WarpManager.scheduleSave();   // ← 新增：觸發存檔
             sp.sendSystemMessage(Component.literal(
                     LanguageManager.translate("warp.modify.icon_hand.success", sp,
                             handItem.getHoverName().getString())));
             sp.closeContainer();
             WarpGuiHelper.openMainMenu(sp);
         } else if (slot == 2) {
-            // 设为脚下方块图标
             net.minecraft.core.BlockPos pos = sp.blockPosition().below();
             net.minecraft.world.level.block.state.BlockState state = sp.level().getBlockState(pos);
             if (state.isAir()) {
@@ -93,6 +93,7 @@ public class WarpModifyMenu extends ChestMenu {
             }
             Identifier blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
             warp.setIconItemId(blockId.toString());
+            WarpManager.scheduleSave();   // ← 新增：觸發存檔
             sp.sendSystemMessage(Component.literal(
                     LanguageManager.translate("warp.modify.icon_ground.success", sp)));
             sp.closeContainer();

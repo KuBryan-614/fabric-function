@@ -39,20 +39,20 @@ public class BackCommand {
 
         UUID playerId = player.getUUID();
 
-        // 優先檢查傳送記錄（上一個位置），讓訊息與行為一致
-        if (BackManager.hasTeleport(playerId)) {
-            BackManager.LastLocation loc = BackManager.consumeTeleport(playerId);
-            // 同時清除可能殘留的死亡記錄，避免下次 /back 誤跳死亡點
-            if (BackManager.hasDeath(playerId)) {
-                BackManager.consumeDeath(playerId); // 丟棄，僅清除
-            }
-            return performBack(ctx, player, loc, "back.success.teleport");
-        }
-
-        // 沒有傳送記錄時才處理死亡記錄
+        // 優先處理死亡記錄
         if (BackManager.hasDeath(playerId)) {
             BackManager.LastLocation loc = BackManager.consumeDeath(playerId);
+            // 清除可能殘留的傳送記錄，避免下次 /back 誤判
+            if (BackManager.hasTeleport(playerId)) {
+                BackManager.consumeTeleport(playerId);
+            }
             return performBack(ctx, player, loc, "back.success.death");
+        }
+
+        // 接著處理傳送記錄
+        if (BackManager.hasTeleport(playerId)) {
+            BackManager.LastLocation loc = BackManager.consumeTeleport(playerId);
+            return performBack(ctx, player, loc, "back.success.teleport");
         }
 
         MessageDisplayManager.sendSystemMessage(player,

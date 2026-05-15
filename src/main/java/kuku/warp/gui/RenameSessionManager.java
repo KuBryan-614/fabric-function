@@ -3,6 +3,8 @@ package kuku.warp.gui;
 import kuku.data.WarpData;
 import kuku.lang.LanguageManager;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import java.util.Map;
 import java.util.UUID;
@@ -22,13 +24,17 @@ public class RenameSessionManager {
         RenameSession session = new RenameSession(warp);
         sessions.put(id, session);
 
+        MinecraftServer server = ((ServerLevel) player.level()).getServer();
         scheduler.schedule(() -> {
             RenameSession s = sessions.remove(id);
             if (s != null && s.isActive()) {
-                player.sendSystemMessage(Component.literal(
-                        LanguageManager.translate("warp.rename.timeout", player)));
+                // 在伺服器主執行緒發送訊息
+                server.execute(() -> {
+                    player.sendSystemMessage(Component.literal(
+                            LanguageManager.translate("warp.rename.timeout", player)));
+                });
             }
-        }, TIMEOUT_MS / 1000, TimeUnit.SECONDS);  // 改這行
+        }, TIMEOUT_MS, TimeUnit.MILLISECONDS);
 
         player.sendSystemMessage(Component.literal(
                 LanguageManager.translate("warp.rename.start", player)));
@@ -39,14 +45,15 @@ public class RenameSessionManager {
         RenameSession session = sessions.get(id);
         if (session == null || !session.isActive()) return false;
 
-        if (message.equalsIgnoreCase("/cancel")) {
+        // 輸入 "cancel" 取消重命名
+        if (message.trim().equalsIgnoreCase("cancel")) {
             sessions.remove(id);
             player.sendSystemMessage(Component.literal(
                     LanguageManager.translate("warp.rename.cancel", player)));
-            return true;
+            return true; // 消耗訊息
         }
 
-        // 尝试重命名
+        // 嘗試重命名
         String newName = message.trim();
         WarpData warp = session.getWarp();
         if (kuku.warp.WarpManager.getWarp(newName) != null) {

@@ -153,11 +153,14 @@ public class WarpCommand {
         try {
             tempPlayer = ctx.getSource().getPlayerOrException();
         } catch (CommandSyntaxException ignored) {}
+
         final ServerPlayer player = tempPlayer;
 
+        // 如果是玩家執行，則檢查模組是否啟用
         if (player != null && !checkEnabled(ctx.getSource(), player)) return 0;
 
         if (player != null) {
+            // 玩家執行：檢查所有權與存在性，並發送系統訊息
             WarpData warp = WarpManager.getWarp(name);
             if (warp == null) {
                 MessageDisplayManager.sendSystemMessage(player,
@@ -176,15 +179,12 @@ public class WarpCommand {
                     LanguageManager.prefixed("Warp", "warp.success.delete", player, name)
                             .withStyle(ChatFormatting.GREEN));
         } else {
+            // 控制台執行：無視所有權，直接強制刪除
             if (!WarpManager.forceDelete(name)) {
-                MessageDisplayManager.sendSystemMessage(null,
-                        LanguageManager.prefixed("Warp", "warp.error.not_found", null, name)
-                                .withStyle(ChatFormatting.RED));
+                System.out.println("[Function Warp] 傳送點不存在：" + name);
                 return 0;
             }
-            MessageDisplayManager.sendSystemMessage(null,
-                    LanguageManager.prefixed("Warp", "warp.success.delete", null, name)
-                            .withStyle(ChatFormatting.GREEN));
+            System.out.println("[Function Warp] 已刪除傳送點：" + name);
         }
         return 1;
     }

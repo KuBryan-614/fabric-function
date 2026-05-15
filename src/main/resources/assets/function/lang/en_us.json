@@ -130,7 +130,7 @@
   "removebinding.success": "Removed binding curse item(s): {0}",
   "removebinding.error.no_item": "No binding curse equipment to remove.",
   "removebinding.error.invalid_target": "Invalid slot. Use all/head/chest/legs/feet.",
-  "chestname.set": "Container renamed to: %s",
+  "chestname.set": "Container renamed to: {0}",
   "chestname.clear": "Container name cleared",
   "name.help": "Special Naming Guide: Use a name tag to name mobs. Add keywords in the name (can be combined):\nnd: Invulnerable (takes no damage)\nned: Takes damage but cannot die\nnbr: Remove Boss Bar (Wither only)\nsilent: Silent (no sounds)\nnmove: Cannot move (still affected by water flow/gravity)\nExample: Naming \"nd nmove\" makes the mob both invulnerable and immobile.",
   "dli.enabled": "Anti-clumsy handling protection is enabled",

@@ -112,7 +112,7 @@ public class WarpManager {
     }
 
     // 異步保存，避免阻塞主執行緒
-    private static void scheduleSave() {
+    public static void scheduleSave() {
         if (configDir == null) return;   // 尚未初始化
         final Path path = configDir;
         CompletableFuture.runAsync(() -> save(path));

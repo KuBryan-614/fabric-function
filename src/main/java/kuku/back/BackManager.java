@@ -12,57 +12,60 @@ public class BackManager {
     public record LastLocation(Identifier dimensionId, double x, double y, double z,
                                float yaw, float pitch) {}
 
-    /**
-     * 單一 slot：死亡和傳送都寫這裡。
-     * /back 前先把當前位置寫入，再讀取舊值傳送，實現 A↔B 無限切換。
-     */
-    private static final Map<UUID, LastLocation> lastLocations = new ConcurrentHashMap<>();
+    // 分開儲存死亡與傳送前的位置
+    private static final Map<UUID, LastLocation> deathLocations = new ConcurrentHashMap<>();
+    private static final Map<UUID, LastLocation> teleportLocations = new ConcurrentHashMap<>();
 
     /** 傳送前（/home /warp /tpa）記錄當前位置 */
     public static void recordTeleport(ServerPlayer player) {
-        lastLocations.put(player.getUUID(), fromPlayer(player));
+        teleportLocations.put(player.getUUID(), fromPlayer(player));
     }
 
-    /** 死亡時記錄死亡位置（與 recordTeleport 寫同一個 slot，優先蓋過傳送記錄） */
+    /** 死亡時記錄死亡位置 */
     public static void recordDeath(ServerPlayer player) {
-        lastLocations.put(player.getUUID(), fromPlayer(player));
+        deathLocations.put(player.getUUID(), fromPlayer(player));
     }
 
-    /** 取得記錄（不清除），供 /back 先讀目標再寫當前位置用 */
-    public static LastLocation get(UUID playerId) {
-        return lastLocations.get(playerId);
+    // 死亡記錄操作
+    public static LastLocation getDeath(UUID playerId) {
+        return deathLocations.get(playerId);
+    }
+    public static LastLocation consumeDeath(UUID playerId) {
+        return deathLocations.remove(playerId);
+    }
+    public static boolean hasDeath(UUID playerId) {
+        return deathLocations.containsKey(playerId);
     }
 
-    /** 取得並清除記錄 */
-    public static LastLocation consume(UUID playerId) {
-        return lastLocations.remove(playerId);
+    // 傳送記錄操作
+    public static LastLocation getTeleport(UUID playerId) {
+        return teleportLocations.get(playerId);
+    }
+    public static LastLocation consumeTeleport(UUID playerId) {
+        return teleportLocations.remove(playerId);
+    }
+    public static boolean hasTeleport(UUID playerId) {
+        return teleportLocations.containsKey(playerId);
     }
 
-    /** 是否有記錄 */
-    public static boolean has(UUID playerId) {
-        return lastLocations.containsKey(playerId);
-    }
-
-    /** 玩家離線時清除 */
+    /** 玩家離線時清除所有記錄 */
     public static void removeAll(UUID playerId) {
-        lastLocations.remove(playerId);
+        deathLocations.remove(playerId);
+        teleportLocations.remove(playerId);
     }
 
-    // ── 舊 API 兼容（避免其他地方編譯失敗）──────────────────────
+    // ── 向下相容（保留舊 API 呼叫）──────────────────────
     public static void recordTeleport(ServerPlayer player, boolean ignored) { recordTeleport(player); }
-    public static LastLocation getDeath(UUID id)      { return get(id); }
-    public static LastLocation getTeleport(UUID id)   { return get(id); }
-    public static LastLocation consumeDeath(UUID id)  { return consume(id); }
-    public static LastLocation consumeTeleport(UUID id){ return consume(id); }
-    public static boolean hasDeath(UUID id)           { return has(id); }
-    public static boolean hasTeleport(UUID id)        { return has(id); }
-    // ─────────────────────────────────────────────────────────────
+    public static LastLocation get(UUID id)      { return getTeleport(id); }
+    public static LastLocation consume(UUID id)  { return consumeTeleport(id); }
+    public static boolean has(UUID id)           { return hasTeleport(id); }
+    // ─────────────────────────────────────────────────────
 
     private static LastLocation fromPlayer(ServerPlayer player) {
         String dimStr = DimensionUtil.dimensionToString(player.level().dimension());
         Identifier dimId = Identifier.tryParse(dimStr);
         return new LastLocation(
-                dimId != null ? dimId : Identifier.tryParse("minecraft:overworld"),
+                dimId != null ? dimId : Identifier.withDefaultNamespace("overworld"),
                 player.getX(), player.getY(), player.getZ(),
                 player.getYRot(), player.getXRot()
         );

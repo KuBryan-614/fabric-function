@@ -1,25 +1,27 @@
 name: Build Fabric Mod
 
 on:
+  pull_request:
   push:
-    tags:
-      - 'v*' # 當你推送標籤如 v1.0.0 時觸發
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
       - name: Set up JDK 25
         uses: actions/setup-java@v5
         with:
           java-version: '25'
           distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant Execute Permission
+        run: chmod +x gradlew
+
       - name: Build with Gradle
         run: ./gradlew build
-      - name: Upload to Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: build/libs/function-1.0.0.jar # 替換成你實際產出的檔名
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
