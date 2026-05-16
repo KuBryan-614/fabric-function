@@ -27,6 +27,7 @@ import kuku.rightclick.RightClickHarvest;
 import kuku.slab.SlabMiningHandler;
 import kuku.takeoffbindings.RemoveBindingCommand;
 import kuku.tree.TreeAuto;
+import kuku.update.UpdateChecker;
 import kuku.util.MessageDisplayManager;
 import kuku.warp.WarpManager;
 import kuku.back.BackManager;
@@ -173,16 +174,21 @@ public class Function implements ModInitializer {
 		ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, params) -> {
 			if (sender instanceof ServerPlayer player) {
 				String content = message.signedContent();
-				if (content != null && RenameSessionManager.handleChat(player, content)) {
-					return false; // 消耗消息，不广播
+				if (content != null) {
+					// 優先處理 warp 重命名，若為重命名輸入則消耗訊息
+					if (RenameSessionManager.handleChat(player, content)) {
+						return false;
+					}
 				}
 			}
+
 			return true;
 		});
 
 		// 伺服器啟動完成後載入數據
 		ServerLifecycleEvents.SERVER_STARTED.register(server -> {
 			var configDir = FabricLoader.getInstance().getConfigDir().resolve(MOD_ID);
+			UpdateChecker.checkForUpdate();
 			HomeManager.load(configDir);
 			WarpManager.load(configDir);
 			PlayerLanguageManager.load(configDir);

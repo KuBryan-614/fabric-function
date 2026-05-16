@@ -57,7 +57,10 @@
   "warp.list.header": "所有公共传送点：",
   "warp.list.entry": " - {0} @{1} {2}",
 
-  "lang.success.set": "已成功设置",
+  "lang.success.set": "语言已设置为 {0}。",
+  "lang.error.unavailable": "语言 '{0}' 不可用。",
+  "chat.set.action": "消息将显示在快捷栏。",
+  "chat.set.chatscreen": "消息将显示在聊天栏。",
 
   "tree.error.no_sapling": "背包没有对应树苗，无法重新种植。",
   "tree.success.replanted": "已重新种植。",
@@ -65,6 +68,7 @@
   "treeauto.status.disabled": "自动种树：关闭",
   "treeauto.set.on": "自动种树已设为开启",
   "treeauto.set.off": "自动种树已设为关闭",
+  "treeauto.error.usage": "用法：/treeauto <on|off>",
 
   "function.error.console_only": "此命令只能由控制台执行。",
   "function.success.reload": "配置已重新加载。",
