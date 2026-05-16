@@ -12,6 +12,7 @@
 		"debug.ServerPlayerGameModeMixin",
 		"debug.IngredientMixin",
 		"modslash.ServerCommonPacketListenerImplAccessor",
+		"axolotl.AxolotlItemMixin",
 		"dli.ServerPlayerMixin"
 	],
 	"injectors": {

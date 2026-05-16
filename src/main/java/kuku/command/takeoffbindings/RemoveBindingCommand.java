@@ -1,4 +1,4 @@
-package kuku.takeoffbindings;
+package kuku.command.takeoffbindings;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;

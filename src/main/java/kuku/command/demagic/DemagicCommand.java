@@ -1,4 +1,4 @@
-package kuku.demagic;
+package kuku.command.demagic;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;

@@ -1,4 +1,4 @@
-package kuku.modslash;
+package kuku.command;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
@@ -6,6 +6,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import kuku.lang.LanguageManager;
 import kuku.mixin.modslash.ServerCommonPacketListenerImplAccessor;
+import kuku.modslash.TickTracker;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.component.DataComponents;

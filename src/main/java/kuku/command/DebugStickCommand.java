@@ -1,8 +1,8 @@
-package kuku.debug;
+package kuku.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.ChatFormatting;
+import kuku.debug.DebugStickActions;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;

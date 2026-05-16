@@ -3,11 +3,14 @@ package kuku.rightclick;
 import kuku.config.RightClickConfig;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
@@ -63,7 +66,8 @@ public class RightClickHarvest {
                 currentAge = state.getValue(ageProperty);
                 seedItem = Items.SWEET_BERRIES;
             } else if (block instanceof CaveVinesBlock || block instanceof CaveVinesPlantBlock) {
-                return handleBerries(world, pos, state);
+                // 螢光莓需要玩家物件來發送揮手動畫，所以傳入 player
+                return handleBerries(world, pos, state, (ServerPlayer) player);
             } else {
                 return InteractionResult.PASS;
             }
@@ -89,9 +93,13 @@ public class RightClickHarvest {
             for (ItemStack drop : finalDrops) {
                 Block.popResource(world, pos, drop);
             }
-
             world.levelEvent(2001, pos, Block.getId(state));
             world.setBlock(pos, state.setValue(ageProperty, 0), 3);
+
+            // 發送右手揮動動畫
+            ((ServerPlayer) player).connection.send(
+                    new ClientboundAnimatePacket(player, 0)
+            );
 
             return InteractionResult.CONSUME;
         });
@@ -108,9 +116,8 @@ public class RightClickHarvest {
         }
     }
 
-    // ✅ 簡化螢光莓處理（兩個 Blocks 的 BERRIES 是同一個屬性）
-    private static InteractionResult handleBerries(net.minecraft.world.level.Level world, BlockPos pos, BlockState state) {
-        // 檢查是否有漿果（使用 CaveVinesPlantBlock.BERRIES 即可，兩者共用）
+    // 螢光莓處理，加入揮手動畫
+    private static InteractionResult handleBerries(Level world, BlockPos pos, BlockState state, ServerPlayer player) {
         if (state.hasProperty(CaveVinesPlantBlock.BERRIES)) {
             boolean hasBerries = state.getValue(CaveVinesPlantBlock.BERRIES);
             if (!hasBerries) return InteractionResult.PASS;
@@ -119,8 +126,11 @@ public class RightClickHarvest {
             world.levelEvent(2001, pos, Block.getId(state));
             // 設定漿果為 false
             world.setBlock(pos, state.setValue(CaveVinesPlantBlock.BERRIES, false), 3);
+
+            // 揮手動畫
+            player.connection.send(new ClientboundAnimatePacket(player, 0));
             return InteractionResult.CONSUME;
         }
-        return InteractionResult.PASS;   // 理論上不會進入，因為前面已判斷是 CaveVines
+        return InteractionResult.PASS;
     }
 }
