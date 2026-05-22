@@ -11,9 +11,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ServerPlayer.class)
 public class ServerPlayerMixin {
-    @Inject(method = "drop(ZZLnet/minecraft/world/item/ItemStack;)Lnet/minecraft/world/entity/item/ItemEntity;",
-            at = @At("HEAD"), cancellable = true)
-    private void onDrop(boolean dropAll, boolean throwRandomly, ItemStack stack,
+    @Inject(method = "drop(Lnet/minecraft/world/item/ItemStack;ZZ)Lnet/minecraft/world/entity/item/ItemEntity;",
+            at = @At("HEAD"), cancellable = true, require = 0)
+    private void onDrop(ItemStack stack, boolean throwRandomly, boolean retainOwnership,
                         CallbackInfoReturnable<ItemEntity> cir) {
         ServerPlayer self = (ServerPlayer) (Object) this;
         if (!DliSetup.onDropItem(self, stack)) {
