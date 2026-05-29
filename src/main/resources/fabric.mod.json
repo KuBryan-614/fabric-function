@@ -8,8 +8,8 @@
 		"Me!"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/KuBryan-614/fabric-function",
+		"sources": "https://github.com/KuBryan-614/fabric-function"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/function/icon.png",
